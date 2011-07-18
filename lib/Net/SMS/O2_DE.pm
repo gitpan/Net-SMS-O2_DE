@@ -15,34 +15,34 @@ Net::SMS::O2_DE - a module to send SMS messages using the O2 Germany web2sms! On
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 =head1 SYNOPSIS
 
-use strict;
-use Net::SMS::O2_DE;
-
-my $sms = Net::SMS::O2_DE->new(
-	autotruncate => 1,
-	username => '01701234567',
-	password => 'SECRET',
-	sender => 'YourMother',
-	recipient => '+4917676543210',
-	message => 'a test message',
-);
-
-$sms->verbose( 1 );
-$sms->login();
-print "Quota: " , $sms->quota(). "\n";
-$sms->message( 'a different message' );
-print "sending message to mobile number ", $sms->recipient();
-$sms->send_sms();
-$sms->logout();
+        use strict;
+        use Net::SMS::O2_DE;
+        
+        my $sms = Net::SMS::O2_DE->new(
+            autotruncate => 1,
+            username => '01701234567',
+            password => 'SECRET',
+            sender => 'YourMother',
+            recipient => '+4917676543210',
+            message => 'a test message',
+        );
+        
+        $sms->verbose( 1 );
+        $sms->login();
+        print "Quota: " , $sms->quota(). "\n";
+        $sms->message( 'a different message' );
+        print "sending message to mobile number ", $sms->recipient();
+        $sms->send_sms();
+        $sms->logout();
 
 =head1 DESCRIPTION
 
@@ -131,6 +131,7 @@ $MAX_CHARS = 1800;
 =head1 SUBROUTINES/METHODS
 
 =head2 CONSTRUCTOR
+
 The constructor for Net::SMS::O2_DE takes the following arguments as hash
 values (see L<SYNOPSIS|"SYNOPSIS">):
 
@@ -200,12 +201,16 @@ be round up internally to the next quarter of the hour.
 =head3 frequency (OPTIONAL)
 
 Frequency for scheduled sms. Use one of the following values (default is 5):
-5 : only once
-6 : hourly
-1 : dayly
-2 : weekly
-3 : monthly
-4 : each year
+
+        5 : only once
+        6 : hourly
+        1 : dayly
+        2 : weekly
+        3 : monthly
+        4 : each year
+
+
+
 
 =cut
 #------------------------------------------------------------------------------

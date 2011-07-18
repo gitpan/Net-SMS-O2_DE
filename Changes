@@ -1,5 +1,10 @@
 Revision history for Net-SMS-O2_DE
 
-0.01    Date/time
+0.01    17.07.2011
         First version, released on an unsuspecting world.
 
+0.02    18.07.2011
+        Added additional functions like scheduling
+
+0.03    18.07.2011
+        Improved POD design
