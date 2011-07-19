@@ -15,11 +15,12 @@ Net::SMS::O2_DE - a module to send SMS messages using the O2 Germany web2sms! On
 
 =head1 VERSION
 
-Version 0.03
+Version: 0.04
+Date:    19.07.2011
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 =head1 SYNOPSIS
@@ -350,19 +351,20 @@ sub logout
 	{
 		return if (!$self->{is_logged_in});
 	}
-	print "AFTER!!";
 	
     $self->action( Net::SMS::Web::Action->new(
         url     => $URL_LOGOUT, 
         method  => 'POST'
     ) );
 
-	if ($self->response =~ m/Logout erfolgreich!/)
-	{
-	    $self->{is_logged_in} = 0;
-		return 1;
-	}
-	croak "Logout wasn't successful. Maybe the HTML-Code has changed. Please report a bug.";
+	$self->{is_logged_in} = 0;
+	
+	#if ($self->response =~ m/Logout erfolgreich!/)
+	#{
+	#    $self->{is_logged_in} = 0;
+	#	return 1;
+	#}
+	#croak "Logout wasn't successful. Maybe the HTML-Code has changed. Please report a bug.";
 	
 }
 
@@ -514,16 +516,13 @@ sub send_sms
 		$params->{'RepeatType'} = $params->{'Frequency'};
 	}
 	
-	while ( my ($key, $value) = each(%$params) ) {
-		print "$key => $value\n";
-		$params->{$key} = $value;
-	}
-	
-    $self->action( Net::SMS::Web::Action->new(url => $url,method  => 'POST',params  => $params) );
-	
-				
-			
-			
+    $self->action( 
+		Net::SMS::Web::Action->new(
+			url => $url,
+			method  => 'POST',
+			params  => $params
+		)
+	);
 	
     if ( $self->response =~ m/Ihre SMS wurde erfolgreich versendet./ or $self->response =~ m/Ihre Web2SMS ist geplant/)
     {
