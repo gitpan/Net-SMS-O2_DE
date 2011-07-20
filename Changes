@@ -14,3 +14,7 @@ Revision history for Net-SMS-O2_DE
 
 0.05	20.07.2011
 		Improved documentation for scheduling
+
+0.06	20.07.2011
+		Added warning to documentation
+		Added sms_count function

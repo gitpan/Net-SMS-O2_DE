@@ -8,19 +8,24 @@ use Carp;
 use Net::SMS::Web;
 use Time::Local;
 use Date::Format;
+use Switch;
+use POSIX qw(ceil);
 
 =head1 NAME
 
-Net::SMS::O2_DE - a module to send SMS messages using the O2 Germany web2sms! Only for Internet-Pack users with free sms.
+Net::SMS::O2_DE - a module to send SMS messages using the O2 Germany web2sms!
+It's working for Internet-Pack users. They have normally 50 free sms each month.
+Maybe it is working also for other users. Please tell me if it's working with you
+and you aren't a Internet-Pack user.
 
 =head1 VERSION
 
-Version: 0.05
+Version: 0.06
 Date:    20.07.2011
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 
 =head1 SYNOPSIS
@@ -45,7 +50,29 @@ our $VERSION = '0.05';
         $sms->send_sms();
         $sms->logout();
 
+=head1 WARNING
+
+If you don't have any free sms left, sending SMS may cost you money!!
+
+So check, if your quota is high enough to send the desired sms.
+Use the function C<sms_count> to determine how much sms will be sent
+with the current settings.
+
+Keep in mind that if you have sheduled sms, they arent yet included in the C<quota>.
+Eg: If you send now, with quota=10 a scheduled sms which will be sent each hour for
+the next 3 hours, quota will be decreased to 9 after the first sms is sent.
+An hour later to 8, another hour later to 7. So the quota will not be immideately 7.
+		
+If you have scheduled a sms with C<schedule_start> and C<frequency> but no end date is set
+there will be send an infinite amount of sms. This this is in most cases undesired.
+So remind to set C<schedule_start> AND C<schedule_end> 
+
+Use C<sms_count> to check, if you send an infinite number of sms.
+
+		
 =head1 DESCRIPTION
+
+
 
 A perl module to send SMS messages, using the O2 web2sms gateway. This
 module will only work with mobile phone numbers that have been registered with
@@ -55,7 +82,7 @@ phone users with internet pack.
 
 There is a maximum length for SMS message (1800 for O2). If the sum
 of message length exceed this, the behaviour of the
-Net::SMS::O2 objects depends on the value of the 'autotruncate' argument to
+Net::SMS::O2_DE objects depends on the value of the 'autotruncate' argument to
 the constructor. If this is a true value, then the subject / message will be
 truncated to 1800 characters. If false, the object will throw an exception
 (die). If you set notruncate to 1, then the module won't check the message
@@ -91,6 +118,7 @@ use vars qw(
     %REQUIRED_KEYS 
     %LEGAL_KEYS 
     $MAX_CHARS
+    $SINGLE_CHARS
 );
 
 @ISA = qw( Net::SMS::Web );
@@ -125,6 +153,7 @@ $URL_LOGOUT = 'https://login.o2online.de/loginRegistration/loginAction.do?_flowI
 );
 
 $MAX_CHARS = 1800;
+$SINGLE_CHARS = 160;
 
 
 
@@ -185,14 +214,14 @@ If true uses FlashSMS. Defaults to undef which means FlashSMS is off.
 
 =head3 schedule_start (OPTIONAL)
 
-If you want to schedule the sms set the parameter frequency to desired value.
+If you want to schedule the sms set the parameter C<frequency> to desired value.
 This is the start time using epoch time of the scheduling. The value is given
 in seconds from epoch (eg. use time function).
 ATTENTION: Must be multiple of 900 sekonds (=15 minutes). if not the value will
 be round up internally to the next quarter of the hour.
 
 Example:
-If schedule_start is set to the time value which represents in localtime:
+If C<schedule_start> is set to the time value which represents in localtime:
 
 20.07.2011 20:05:12 it will be round up to 20.07.2011 20:15:00
 
@@ -200,14 +229,14 @@ So the first sms is sent at 20:15:00
 
 =head3 schedule_end (OPTIONAL)
 
-If you want to schedule the sms set the parameter frequency to desired value.
+If you want to schedule the sms set the parameter C<frequency> to desired value.
 This is the end time using epoch time of the scheduling. The value is given
 in seconds from epoch (eg. use time function).
 ATTENTION: Must be multiple of 900 sekonds (=15 minutes). if not the value will
 be round up internally to the next quarter of the hour.
 
 Example:
-If schedule_end is set to the time value which represents in localtime:
+If C<schedule_end> is set to the time value which represents in localtime:
 
 20.07.2011 21:05:12 it will be round up to 20.07.2011 21:15:00
 
@@ -383,6 +412,83 @@ sub logout
 	
 }
 
+=head2 sms_count
+
+Returns the number of needed SMS to send with current settings.
+Eg: If your message contains 200 characters, it will you cost
+2 sms because 1 sms can hold only 160 chars. So this function will return 2.
+
+If you scheduled the sms for eg. each hour in the next three hours,
+this function will return 3.
+
+Combining of long messages and scheduling will also be calculated correctly.
+
+If you have scheduled a sms but no end date there will be send an infinite mount
+of sms so this function returns -1 for infinite
+
+        5 : only once
+        6 : hourly
+        1 : dayly
+        2 : weekly
+        3 : monthly
+        4 : each year
+
+
+=cut
+
+sub sms_count
+{
+    my($self) = @_;
+	my $count_by_text = ceil(length($self->{message})/$SINGLE_CHARS);
+	if ($count_by_text <=0)
+	{
+		$count_by_text = 1;
+	}
+	
+	my $count_by_schedule = 1;
+	if ($self->{schedule_start} || $self->{frequency} || $self->{schedule_end})
+	{
+		#if one of these is set, all must be set, otherwise ther is an infinite number of sms
+		unless ($self->{schedule_start} && $self->{frequency} && $self->{schedule_end})
+		{
+			return -1; #infinite
+		}
+		if ($self->{frequency} != 5) #more than once
+		{
+			
+			my $sched_start = $self->{schedule_start};
+			my $sched_end = $self->{schedule_end};
+			#round up to next full quarter hour
+			$sched_start += (15*60)-($sched_start%(15*60));
+			$sched_end += (15*60)-($sched_end%(15*60));
+			my $schedule_duration = $sched_end - $sched_start; #in seconds
+			switch ($self->{frequency}) {
+				case 6 { #hourly
+					$count_by_schedule = int($schedule_duration  / (60*60))+1;
+				}
+				case 1 { #dayly
+					$count_by_schedule = int($schedule_duration / (24*60*60))+1;
+				}
+				case 2 { #weekly
+					$count_by_schedule = int($schedule_duration / (7*24*60*60))+1;
+				}
+				case 3 { #monthly
+					$count_by_schedule = int($schedule_duration / (31*24*60*60))+1;
+				}
+				case 4 { #each year
+					$count_by_schedule = int($schedule_duration / (365*24*60*60))+1;
+				}
+			}
+			if ($count_by_schedule < 1) #if division floor to null
+			{
+				$count_by_schedule = 1;
+			}
+		}
+	}
+	
+	return $count_by_text*$count_by_schedule;
+}
+
 =head2 quota
 
 Returns the current available free sms.
@@ -544,9 +650,6 @@ sub send_sms
         return 1;
     }
 	
-	open (MYFILE, '>error.html');
-	print MYFILE $self->response ;
-	close (MYFILE); 
     croak "Coudln't send sms.";
 }
 
