@@ -15,12 +15,12 @@ Net::SMS::O2_DE - a module to send SMS messages using the O2 Germany web2sms! On
 
 =head1 VERSION
 
-Version: 0.04
-Date:    19.07.2011
+Version: 0.05
+Date:    20.07.2011
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 
 =head1 SYNOPSIS
@@ -191,6 +191,13 @@ in seconds from epoch (eg. use time function).
 ATTENTION: Must be multiple of 900 sekonds (=15 minutes). if not the value will
 be round up internally to the next quarter of the hour.
 
+Example:
+If schedule_start is set to the time value which represents in localtime:
+
+20.07.2011 20:05:12 it will be round up to 20.07.2011 20:15:00
+
+So the first sms is sent at 20:15:00
+
 =head3 schedule_end (OPTIONAL)
 
 If you want to schedule the sms set the parameter frequency to desired value.
@@ -198,6 +205,13 @@ This is the end time using epoch time of the scheduling. The value is given
 in seconds from epoch (eg. use time function).
 ATTENTION: Must be multiple of 900 sekonds (=15 minutes). if not the value will
 be round up internally to the next quarter of the hour.
+
+Example:
+If schedule_end is set to the time value which represents in localtime:
+
+20.07.2011 21:05:12 it will be round up to 20.07.2011 21:15:00
+
+So the last sms is sent at exactly 21:15:00
 
 =head3 frequency (OPTIONAL)
 
@@ -210,7 +224,8 @@ Frequency for scheduled sms. Use one of the following values (default is 5):
         3 : monthly
         4 : each year
 
-
+Don't forget to set schedule_end otherwise there you may not be able to stop the
+sms sending.
 
 
 =cut
@@ -528,6 +543,10 @@ sub send_sms
     {
         return 1;
     }
+	
+	open (MYFILE, '>error.html');
+	print MYFILE $self->response ;
+	close (MYFILE); 
     croak "Coudln't send sms.";
 }
 

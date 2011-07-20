@@ -11,3 +11,6 @@ Revision history for Net-SMS-O2_DE
 		
 0.04	19.07.2011
 		Removed debug output and checking of logout was successful
+
+0.05	20.07.2011
+		Improved documentation for scheduling

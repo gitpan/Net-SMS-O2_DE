@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Net-SMS-O2_DE
-version:            0.04
+version:            0.05
 abstract:           a module to send SMS messages using the O2 Germany web2sms! Only for Internet-Pack users with free sms.
 author:
     - Stefan Profanter <profanter@cpan.org>
