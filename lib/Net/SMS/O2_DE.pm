@@ -8,7 +8,6 @@ use Carp;
 use Net::SMS::Web;
 use Time::Local;
 use Date::Format;
-use Switch;
 use POSIX qw(ceil);
 
 =head1 NAME
@@ -20,12 +19,12 @@ and you aren't a Internet-Pack user.
 
 =head1 VERSION
 
-Version: 0.06
-Date:    20.07.2011
+Version: 0.07
+Date:    24.07.2011
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 
 =head1 SYNOPSIS
@@ -160,7 +159,9 @@ $SINGLE_CHARS = 160;
 
 =head1 SUBROUTINES/METHODS
 
-=head2 CONSTRUCTOR
+=cut
+
+=head2 CONSTRUCTOR Parameters
 
 The constructor for Net::SMS::O2_DE takes the following arguments as hash
 values (see L<SYNOPSIS|"SYNOPSIS">):
@@ -258,11 +259,10 @@ sms sending.
 
 
 =cut
-#------------------------------------------------------------------------------
-#
-# Constructor
-#
-#------------------------------------------------------------------------------
+
+=head2 new
+The constructor. For parameter explanation see CONSTRUCTOR parameters
+=cut
 
 sub new
 {
@@ -426,14 +426,6 @@ Combining of long messages and scheduling will also be calculated correctly.
 If you have scheduled a sms but no end date there will be send an infinite mount
 of sms so this function returns -1 for infinite
 
-        5 : only once
-        6 : hourly
-        1 : dayly
-        2 : weekly
-        3 : monthly
-        4 : each year
-
-
 =cut
 
 sub sms_count
@@ -462,22 +454,25 @@ sub sms_count
 			$sched_start += (15*60)-($sched_start%(15*60));
 			$sched_end += (15*60)-($sched_end%(15*60));
 			my $schedule_duration = $sched_end - $sched_start; #in seconds
-			switch ($self->{frequency}) {
-				case 6 { #hourly
+			if ($self->{frequency} == 6)
+			{ #hourly
 					$count_by_schedule = int($schedule_duration  / (60*60))+1;
-				}
-				case 1 { #dayly
+			}
+			elsif ($self->{frequency} ==  1)
+			{ #dayly
 					$count_by_schedule = int($schedule_duration / (24*60*60))+1;
-				}
-				case 2 { #weekly
+			}
+			elsif ($self->{frequency} ==  2)
+			{ #weekly
 					$count_by_schedule = int($schedule_duration / (7*24*60*60))+1;
-				}
-				case 3 { #monthly
+			}
+			elsif ($self->{frequency} ==  3)
+			{ #monthly
 					$count_by_schedule = int($schedule_duration / (31*24*60*60))+1;
-				}
-				case 4 { #each year
+			}
+			elsif ($self->{frequency} ==  4)
+			{ #each year
 					$count_by_schedule = int($schedule_duration / (365*24*60*60))+1;
-				}
 			}
 			if ($count_by_schedule < 1) #if division floor to null
 			{
